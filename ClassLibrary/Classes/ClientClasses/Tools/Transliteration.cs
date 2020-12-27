@@ -4,8 +4,14 @@ using System.Text;
 
 namespace Messenger.Classes.ClientClasses.Tools
 {
+    /// <summary>
+    /// Transliteration of a message written in Russian letters into English
+    /// </summary>
     public class Transliteration
     {
+        /// <summary>
+        /// Dictionary containing the comparison of Russian characters to English
+        /// </summary>
         private static readonly Dictionary<string, string> conformity = new Dictionary<string, string>()
             {
                 {"а","a"},
@@ -44,10 +50,10 @@ namespace Messenger.Classes.ClientClasses.Tools
             };
 
         /// <summary>
-        /// Транслитерация сообщения, написанного русскими буквами на английский
+        /// Transliteration of a message written in Russian letters into English
         /// </summary>
-        /// <param name="message">Строка с сообщением</param>
-        /// <returns>Строка после транслитерации</returns>
+        /// <param name="message">Message line</param>
+        /// <returns>String after transliteration</returns>
         public static string Run(string message)
         {
             string result = "";

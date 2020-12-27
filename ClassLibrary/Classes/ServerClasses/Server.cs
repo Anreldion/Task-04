@@ -10,29 +10,41 @@ using System.Threading;
 
 namespace Messenger.Classes.ServerClasses
 {
-    public class Server : NetworkFields
+    /// <summary>
+    /// Server-side class
+    /// </summary>
+    public class Server : NetworkFields, INewMassage
     {
+        /// <summary>
+        /// Private field for ClientId property.
+        /// </summary>
         private int clientId = 0;
+        /// <summary>
+        /// An identifier for new connections.
+        /// </summary>
         private int ClientId => ++clientId;
 
-        List<ClientHandler> clientHandlerList = new List<ClientHandler>(); // все подключения
-        
         /// <summary>
-        /// 
+        /// List for storing information about all connected clients.
+        /// </summary>
+        List<ClientHandler> clientHandlerList = new List<ClientHandler>(); // все подключения
+
+        /// <summary>
+        /// Message lists from each client.
         /// </summary>
         public ClientMessageDictionary messageDictionary = new ClientMessageDictionary();
 
-
+        ///<inheritdoc cref="INewMassage.MessageRecived"/>
         public event Action<TcpClient, string> NewMassageEvent;
 
         /// <summary>
-        /// 
+        /// Initializes a new instance of the <see cref="Server"/ class> 
         /// </summary>
-        /// <param name="local_addr"></param>
-        /// <param name="port"></param>
-        public Server(IPAddress local_addr, int port)
+        /// <param name="local_ip">Local Internet Protocol (IP) address.</param>
+        /// <param name="port">Local Port address.</param>
+        public Server(IPAddress local_ip, int port)
         {
-            LocalIPAddress = local_addr;
+            LocalIPAddress = local_ip;
             LocalPort = port;
             Listener = new TcpListener(LocalIPAddress, LocalPort);
             Listener.Start();
@@ -48,16 +60,6 @@ namespace Messenger.Classes.ServerClasses
                         clientHandlerList.Add(clientHandler);
                         Thread clientThread = new Thread(new ThreadStart(clientHandler.Process));
                         clientThread.Start();
-
-                        clientHandler.NewMassageEvent+= (client, message) =>
-                        {
-                            NewMassageEvent?.Invoke(client, message);
-                        };
-
-                        //clientHandler.RxDMessageEvent += (client, message) => 
-                        //{
-                        //    RxDMessageEvent?.Invoke(client, message);
-                        //};
                     }
                 }
                 catch (Exception ex)
@@ -69,7 +71,7 @@ namespace Messenger.Classes.ServerClasses
                     Disconnect();
                 }
             }));
-            listenThread.Start(); //старт потока
+            listenThread.Start();
         }
 
         /// <summary>
@@ -104,6 +106,7 @@ namespace Messenger.Classes.ServerClasses
         public void SaveMessage(TcpClient tcpClient, string message)
         {
             messageDictionary.AddMessage(tcpClient, message);
+            NewMassageEvent?.Invoke(Client, message);
         }
 
         /// <summary>
@@ -119,5 +122,27 @@ namespace Messenger.Classes.ServerClasses
             }
             Environment.Exit(0);
         }
+
+        /// <inheritdoc 
+        /// cref="object.ToString"
+        /// />
+        public override string ToString()
+        {
+            return String.Format("Type: {0}, IP: {1}, port: {2}", GetType().Name, LocalIPAddress, LocalPort);
+        }
+
+        /// <inheritdoc 
+        /// cref="object.Equals(object)"
+        /// />
+        public override bool Equals(object obj)
+        {
+            return obj is Server server && LocalIPAddress == server.LocalIPAddress && LocalPort == server.LocalPort;
+        }
+
+        /// <inheritdoc 
+        /// cref="object.GetHashCode"
+        /// />
+        public override int GetHashCode() => HashCode.Combine(Listener, LocalIPAddress, LocalPort);
+
     }
 }

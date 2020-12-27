@@ -12,10 +12,10 @@ namespace Messenger.ServerClasses.Tools
     public class ClientMessageDictionary : Dictionary<TcpClient, List<string>>
     {
         /// <summary>
-        /// 
+        /// Add message to dictionary
         /// </summary>
-        /// <param name="tcpClient"></param>
-        /// <param name="message"></param>
+        /// <param name="tcpClient">Provides client connections for TCP network services.</param>
+        /// <param name="message">Message line</param>
         public void AddMessage(TcpClient tcpClient, string message)
         {
             if (TryGetValue(tcpClient, out var value))

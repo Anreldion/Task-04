@@ -4,27 +4,32 @@ using System.Text;
 
 namespace Messenger.Classes.ServerClasses
 {
+    /// <summary>
+    /// Work with the client.
+    /// </summary>
     public class ClientHandler : NetworkFields
     {
+        /// <summary>
+        /// Client identifier
+        /// </summary>
         protected internal string Id { get; private set; }
-        protected internal NetworkStream Network_stream { get; private set; }
-        //TcpClient tcpClient;
-        Server server; // объект сервера
-        //protected const int RxDBufferSize = 64;
-
-        public event Action<TcpClient, string> RxDMessageEvent;
-
-        //public delegate void newMassageHandler(TcpClient tcpClient, string message);
-        //public event newMassageHandler newMassageEvent;
-
-        public event Action<TcpClient, string> NewMassageEvent;
 
         /// <summary>
-        /// 
+        /// Provides the underlying stream of data for network access.
         /// </summary>
-        /// <param name="clientId"></param>
-        /// <param name="tcpClient"></param>
-        /// <param name="serverObject"></param>
+        protected internal NetworkStream Network_stream { get; private set; }
+
+        /// <summary>
+        /// Server object 
+        /// </summary>
+        Server server; // объект сервера
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ClientHandler"/ class> 
+        /// </summary>
+        /// <param name="clientId">Unique identificator</param>
+        /// <param name="tcpClient">TcpClient link</param>
+        /// <param name="serverObject">Server link</param>
         public ClientHandler(int clientId, TcpClient tcpClient, Server serverObject)
         {
             Id = clientId.ToString();
@@ -33,7 +38,7 @@ namespace Messenger.Classes.ServerClasses
         }
 
         /// <summary>
-        /// 
+        /// The process for receiving new messages and closing the connection if the connection is lost.
         /// </summary>
         public void Process()
         {
@@ -46,7 +51,6 @@ namespace Messenger.Classes.ServerClasses
                     {
                         string message = GetMessage();
                         server.SaveMessage(Client, message);
-                        NewMassageEvent?.Invoke(Client, message);
                     }
                     catch
                     {

@@ -6,21 +6,27 @@ using System.Threading;
 
 namespace Messenger.Classes.ClientClasses
 {
-    public class Client : NetworkFields
+    /// <summary>
+    /// Client-side class
+    /// </summary>
+    public class Client : NetworkFields, INewMassage
     {
+        /// <summary>
+        /// Provides the underlying stream of data for network access.
+        /// </summary>
         protected static NetworkStream Network_stream { get; private set; }
-        public event Action<TcpClient, string> RxDMessageEvent;
-        //public delegate void newMassageHandler(TcpClient tcpClient, string message);
-        //public event newMassageHandler newMassageEvent;
+
+        ///<inheritdoc cref="INewMassage.MessageRecived"/>
+        public event Action<TcpClient, string> NewMassageEvent;
 
         /// <summary>
-        /// 
+        /// Initializes a new instance of the <see cref="Client"/ class> 
         /// </summary>
-        /// <param name="local_addr"></param>
-        /// <param name="port"></param>
-        public Client(IPAddress local_addr, int port)
+        /// <param name="local_ip">Local Internet Protocol (IP) address.</param>
+        /// <param name="port">Local Port address.</param>
+        public Client(IPAddress local_ip, int port)
         {
-            LocalIPAddress = local_addr;
+            LocalIPAddress = local_ip;
             LocalPort = port;
 
             Client = new TcpClient();
@@ -31,7 +37,7 @@ namespace Messenger.Classes.ClientClasses
             receiveThread.Start();
         }
         /// <summary>
-        /// 
+        /// Send message to server
         /// </summary>
         /// <param name="message"></param>
         public void SendMessage(string message)
@@ -40,7 +46,7 @@ namespace Messenger.Classes.ClientClasses
             Network_stream.Write(data, 0, data.Length);
         }
         /// <summary>
-        /// 
+        /// Receive message from server
         /// </summary>
         public void ReceiveMessage()
         {
@@ -48,7 +54,7 @@ namespace Messenger.Classes.ClientClasses
             {
                 try
                 {
-                    byte[] data = new byte[RxDBufferSize]; // буфер для получаемых данных
+                    byte[] data = new byte[RxDBufferSize]; 
                     StringBuilder builder = new StringBuilder();
                     do
                     {
@@ -56,7 +62,7 @@ namespace Messenger.Classes.ClientClasses
                         builder.Append(Encoding.Unicode.GetString(data, 0, count));
                     }
                     while (Network_stream.DataAvailable);
-                    RxDMessageEvent?.Invoke(Client, builder.ToString());
+                    NewMassageEvent?.Invoke(Client, builder.ToString());
                 }
                 catch
                 {
@@ -65,7 +71,7 @@ namespace Messenger.Classes.ClientClasses
             }
         }
         /// <summary>
-        /// 
+        /// Close connection
         /// </summary>
         static void Disconnect()
         {
@@ -78,7 +84,7 @@ namespace Messenger.Classes.ClientClasses
                 Client.Close();
             }
 
-            Environment.Exit(0); //завершение процесса
+            Environment.Exit(0);
         }
 
         /// <inheritdoc 
