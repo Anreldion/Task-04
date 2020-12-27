@@ -54,7 +54,7 @@ namespace Messenger.Classes.ClientClasses
             {
                 try
                 {
-                    byte[] data = new byte[RxDBufferSize]; 
+                    byte[] data = new byte[RxDBufferSize];
                     StringBuilder builder = new StringBuilder();
                     do
                     {
@@ -90,7 +90,7 @@ namespace Messenger.Classes.ClientClasses
         /// <inheritdoc 
         /// cref="object.ToString"
         /// />
-        public override string ToString() 
+        public override string ToString()
         {
             return String.Format("Type: {0}, IP: {1}, port: {2}", GetType().Name, LocalIPAddress, LocalPort);
         }
@@ -98,9 +98,9 @@ namespace Messenger.Classes.ClientClasses
         /// <inheritdoc 
         /// cref="object.Equals(object)"
         /// />
-        public override bool Equals(object obj) 
-        { 
-            return obj is Client client && LocalIPAddress == client.LocalIPAddress && LocalPort == client.LocalPort; 
+        public override bool Equals(object obj)
+        {
+            return obj is Client client && LocalIPAddress == client.LocalIPAddress && LocalPort == client.LocalPort;
         }
 
         /// <inheritdoc 

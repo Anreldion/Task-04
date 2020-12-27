@@ -11,7 +11,7 @@ using System.Threading;
 namespace Messenger.Classes.ServerClasses
 {
     /// <summary>
-    /// Server-side class
+    /// Server side class
     /// </summary>
     public class Server : NetworkFields, INewMassage
     {
@@ -86,7 +86,7 @@ namespace Messenger.Classes.ServerClasses
         }
 
         /// <summary>
-        /// Send broadcast message
+        /// Send message for all clients
         /// </summary>
         /// <param name="message">broadcast message</param>
         public void BroadcastMessage(string message)
@@ -94,7 +94,7 @@ namespace Messenger.Classes.ServerClasses
             byte[] data = Encoding.Unicode.GetBytes(message);
             for (int i = 0; i < clientHandlerList.Count; i++)
             {
-                clientHandlerList[i].Network_stream.Write(data, 0, data.Length);       
+                clientHandlerList[i].Network_stream.Write(data, 0, data.Length);
             }
         }
 

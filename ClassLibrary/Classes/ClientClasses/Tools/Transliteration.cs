@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
 
 namespace Messenger.Classes.ClientClasses.Tools
 {
@@ -10,7 +8,7 @@ namespace Messenger.Classes.ClientClasses.Tools
     public class Transliteration
     {
         /// <summary>
-        /// Dictionary containing the comparison of Russian characters to English
+        /// Dictionary containing comparison of Russian characters to English
         /// </summary>
         private static readonly Dictionary<string, string> conformity = new Dictionary<string, string>()
             {
@@ -75,7 +73,7 @@ namespace Messenger.Classes.ClientClasses.Tools
                 {
                     result += ch;
                 }
-                
+
             }
             return result;
         }

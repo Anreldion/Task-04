@@ -1,28 +1,25 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Net;
+﻿using System.Net;
 using System.Net.Sockets;
-using System.Text;
 
 namespace Messenger.Classes
 {
     /// <summary>
-    /// Abstract class describing server-side and client-side fields
+    /// Abstract class describing server and client fields
     /// </summary>
     public abstract class NetworkFields
     {
         /// <summary>
-        /// Provides an Local Internet Protocol (IP) address.
+        /// Provides a Local Internet Protocol (IP) address.
         /// </summary>
         protected IPAddress LocalIPAddress { get; set; }
 
         /// <summary>
-        /// Provides an Local Port address.
+        /// Provides a Local Port address.
         /// </summary>
         protected int LocalPort { get; set; }
 
         /// <summary>
-        /// Array size for receiving data.
+        /// Array size for received data.
         /// </summary>
         protected const int RxDBufferSize = 64;
 

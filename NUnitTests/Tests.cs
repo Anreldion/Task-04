@@ -3,12 +3,8 @@ using Messenger.Classes.ClientClasses.Tools;
 using Messenger.Classes.ServerClasses;
 using Messenger.ServerClasses.Tools;
 using NUnit.Framework;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net;
 using System.Net.Sockets;
-using System.Text;
 
 namespace NUnitTests
 {
@@ -47,13 +43,11 @@ namespace NUnitTests
         private string serverIP = "127.0.0.2";
         private const int serverPort = 8080;
         string expected;
-        //ClientMessageDictionary messageDictionary;
 
         [OneTimeSetUp]
         public void SetUp()
         {
             server = new Server(IPAddress.Parse(serverIP), serverPort);
-            //messageDictionary = new ClientMessageDictionary();
         }
 
         /// <summary>
@@ -162,5 +156,5 @@ namespace NUnitTests
             server.BroadcastMessage(send_message);
         }
     }
-    
+
 }

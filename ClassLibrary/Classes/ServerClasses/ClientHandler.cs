@@ -5,7 +5,7 @@ using System.Text;
 namespace Messenger.Classes.ServerClasses
 {
     /// <summary>
-    /// Work with the client.
+    /// Handling client messages and closing connection if lost class.
     /// </summary>
     public class ClientHandler : NetworkFields
     {
@@ -22,7 +22,7 @@ namespace Messenger.Classes.ServerClasses
         /// <summary>
         /// Server object 
         /// </summary>
-        Server server; // объект сервера
+        Server server;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ClientHandler"/ class> 
@@ -38,7 +38,7 @@ namespace Messenger.Classes.ServerClasses
         }
 
         /// <summary>
-        /// The process for receiving new messages and closing the connection if the connection is lost.
+        /// The process of receiving new messages and closing the connection if lost.
         /// </summary>
         public void Process()
         {
