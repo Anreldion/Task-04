@@ -3,6 +3,8 @@ using Messenger.Classes.ClientClasses.Tools;
 using Messenger.Classes.ServerClasses;
 using Messenger.ServerClasses.Tools;
 using NUnit.Framework;
+using System.Diagnostics;
+using System.IO;
 using System.Net;
 using System.Net.Sockets;
 
@@ -117,6 +119,50 @@ namespace NUnitTests
             Assert.AreEqual(message_in_1, dictionary[tcpClient1][0]);
             Assert.AreEqual(message_in_2, dictionary[tcpClient2][1]);
         }
+
+        /// <summary>
+        /// Testing <see cref="ClientMessageDictionary.GetMessages(TcpClient)"/ method>
+        /// </summary>
+        /// <param name="expected_result">Expected result</param>
+        /// <param name="message_in">Message in</param>
+        [TestCase("message_in_1", "message_in_2")]
+        [Description("Testing AddMessage method")]
+        public void GetMessagesTest(string message_in_1, string message_in_2)
+        {
+            TcpClient tcpClient1 = new TcpClient();
+            TcpClient tcpClient2 = new TcpClient();
+            dictionary.AddMessage(tcpClient1, message_in_1);
+            dictionary.AddMessage(tcpClient1, message_in_2);
+            dictionary.AddMessage(tcpClient2, message_in_1);
+            dictionary.AddMessage(tcpClient2, message_in_2);
+
+            // Act
+            var list = dictionary.GetMessages(tcpClient1);
+
+            // Assert
+            Assert.AreEqual(message_in_1, list[0]);
+            Assert.AreEqual(message_in_2, list[1]);
+        }
+
+        /// <summary>
+        /// Testing <see cref="ClientMessageDictionary.ToFile(TcpClient)"/ method>
+        /// </summary>
+        /// <param name="expected_result">Expected result</param>
+        /// <param name="message_in">Message in</param>
+        [TestCase("Первое сообщение", "Второе сообщение")]
+        [Description("Testing AddMessage method")]
+        public void ToFileTest(string message_in_1, string message_in_2)
+        {
+            TcpClient tcpClient1 = new TcpClient();
+            dictionary.AddMessage(tcpClient1, message_in_1);
+            dictionary.AddMessage(tcpClient1, message_in_2);
+
+            // Act
+            dictionary.ToFile("messeges.txt");
+
+            // Assert
+            Assert.True(File.Exists("messeges.txt"));
+        }
     }
 
     /// <summary>
@@ -142,7 +188,7 @@ namespace NUnitTests
         /// <param name="send_message">Send message</param>
         /// <param name="expected_message">Expected receive message</param>
         [TestCase("127.0.0.1", 8080, "Тест", "Test")]
-        //[TestCase("127.0.0.1", 8080, "Тест кейс", "Test keis")]
+        [TestCase("127.0.0.1", 8080, "Тест кейс", "Test keis")]
         [Description("Testing BroadcastMessage method")]
         public void BroadcastMessageTest(string ip, int port, string send_message, string expected_message)
         {
