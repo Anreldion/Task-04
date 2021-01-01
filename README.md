@@ -1,7 +1,7 @@
 # Task-04
 Delegates. Events.
 
-ClassLibrary - Class library folder Messenger. Contains:
+ClassLibrary - Folder. Contains:
 - INewMassage.cs - Interface allowing subscription to a new massage event.
 - NetworkFields.cs - Abstract class describing server and client fields.
 - Client.cs - Client-side class.
