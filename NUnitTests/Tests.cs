@@ -152,7 +152,6 @@ namespace NUnitTests
             {
                 Assert.AreEqual(expected_message, Transliteration.Run(send_message));
             };
-            client.SendMessage("");
             server.BroadcastMessage(send_message);
         }
     }

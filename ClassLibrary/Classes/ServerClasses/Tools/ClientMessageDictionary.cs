@@ -7,7 +7,7 @@ using System.Text;
 namespace Messenger.ServerClasses.Tools
 {
     /// <summary>
-    /// 
+    /// Client message dictionary
     /// </summary>
     public class ClientMessageDictionary : Dictionary<TcpClient, List<string>>
     {
