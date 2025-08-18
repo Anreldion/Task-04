@@ -5,6 +5,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
+using Messenger.DTO;
 using Messenger.Tools;
 
 namespace Messenger.Server
@@ -17,7 +18,7 @@ namespace Messenger.Server
         /// <summary>
         /// Private field for ClientId property.
         /// </summary>
-        private int _clientId = 0;
+        private int _clientId;
         /// <summary>
         /// An identifier for new connections.
         /// </summary>
@@ -33,7 +34,7 @@ namespace Messenger.Server
         /// </summary>
         public readonly ClientMessageDictionary MessageDictionary = new ClientMessageDictionary();
 
-        ///<inheritdoc cref="INewMessage.MessageRecived"/>
+        
         public event Action<TcpClient, string> NewMessageEvent;
 
         /// <summary>

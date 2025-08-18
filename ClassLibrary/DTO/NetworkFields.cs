@@ -1,7 +1,7 @@
 ﻿using System.Net;
 using System.Net.Sockets;
 
-namespace Messenger
+namespace Messenger.DTO
 {
     /// <summary>
     /// Abstract class describing server and client fields

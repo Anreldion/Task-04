@@ -1,4 +1,5 @@
-﻿using System.Net.Sockets;
+﻿using Messenger.DTO;
+using System.Net.Sockets;
 using System.Text;
 
 namespace Messenger.Server

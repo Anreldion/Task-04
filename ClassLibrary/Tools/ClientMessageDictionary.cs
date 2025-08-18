@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net.Sockets;
 using System.Text;
 
@@ -34,13 +35,9 @@ namespace Messenger.Tools
         public List<string> GetMessages(TcpClient tcpClient)
         {
             List<string> list = [];
-            if(TryGetValue(tcpClient, out var value))
-            {
-                foreach (var item in value)
-                {
-                    list.Add(item);
-                }
-            }
+            if (!TryGetValue(tcpClient, out var value)) return list;
+
+            list.AddRange(value);
             return list;
         }
 
@@ -53,12 +50,9 @@ namespace Messenger.Tools
             try
             {
                 using var sw = new StreamWriter(name, false, Encoding.Default);
-                foreach (var list in Values)
+                foreach (var item in Values.SelectMany(list => list))
                 {
-                    foreach (var item in list)
-                    {
-                        sw.WriteLine(item);
-                    }
+                    sw.WriteLine(item);
                 }
             }
             catch (Exception e)

@@ -5,7 +5,7 @@ namespace Messenger.Tools
     /// <summary>
     /// Transliteration of a message written in Russian letters into English
     /// </summary>
-    public class Transliteration
+    public static class Transliteration
     {
         /// <summary>
         /// Dictionary containing comparison of Russian characters to English
@@ -54,29 +54,19 @@ namespace Messenger.Tools
         /// <returns>String after transliteration</returns>
         public static string Run(string message)
         {
-            var result = "";
+            var result = string.Empty;
             foreach (var ch in message)
             {
-                var isUpper = char.IsUpper(ch);
                 if (Conformity.TryGetValue(char.ToLower(ch).ToString(), out var engCh))
                 {
-                    if (isUpper)
-                    {
-                        result += engCh.ToUpper();
-                    }
-                    else
-                    {
-                        result += engCh;
-                    }
+                    result += char.IsUpper(ch) ? engCh.ToUpper(): engCh;
                 }
                 else
                 {
                     result += ch;
                 }
-
             }
             return result;
         }
-
     }
 }

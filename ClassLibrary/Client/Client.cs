@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Messenger.DTO;
+using System;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -74,37 +75,25 @@ namespace Messenger.Client
         /// </summary>
         static void Disconnect()
         {
-            if (NetworkStream != null)
-            {
-                NetworkStream.Close();
-            }
-            if (Client != null)
-            {
-                Client.Close();
-            }
+            NetworkStream?.Close();
+            Client?.Close();
 
             Environment.Exit(0);
         }
 
-        /// <inheritdoc 
-        /// cref="object.ToString"
-        /// />
+        /// <inheritdoc  cref="object.ToString" />
         public override string ToString()
         {
             return $"Type: {GetType().Name}, IP: {LocalIpAddress}, port: {LocalPort}";
         }
 
-        /// <inheritdoc 
-        /// cref="object.Equals(object)"
-        /// />
+        /// <inheritdoc  cref="object.Equals(object)" />
         public override bool Equals(object obj)
         {
             return obj is Client client && LocalIpAddress == client.LocalIpAddress && LocalPort == client.LocalPort;
         }
 
-        /// <inheritdoc 
-        /// cref="object.GetHashCode"
-        /// />
+        /// <inheritdoc  cref="object.GetHashCode" />
         public override int GetHashCode() => HashCode.Combine(Client, NetworkStream, LocalIpAddress, LocalPort);
 
     }
