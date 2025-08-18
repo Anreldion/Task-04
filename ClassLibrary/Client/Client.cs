@@ -4,36 +4,35 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 
-namespace Messenger.Classes.ClientClasses
+namespace Messenger.Client
 {
     /// <summary>
     /// Client-side class
     /// </summary>
-    public class Client : NetworkFields, INewMassage
+    public class Client : NetworkFields, INewMessage
     {
         /// <summary>
         /// Provides the underlying stream of data for network access.
         /// </summary>
-        protected static NetworkStream Network_stream { get; private set; }
+        private static NetworkStream NetworkStream { get; set; }
 
-        ///<inheritdoc cref="INewMassage.MessageRecived"/>
-        public event Action<TcpClient, string> NewMassageEvent;
+        public event Action<TcpClient, string> NewMessageEvent;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="Client"/ class> 
+        /// Initializes a new instance of the <see cref="Client"/> 
         /// </summary>
         /// <param name="local_ip">Local Internet Protocol (IP) address.</param>
         /// <param name="port">Local Port address.</param>
         public Client(IPAddress local_ip, int port)
         {
-            LocalIPAddress = local_ip;
+            LocalIpAddress = local_ip;
             LocalPort = port;
 
             Client = new TcpClient();
-            Client.Connect(LocalIPAddress, port);
-            Network_stream = Client.GetStream();
+            Client.Connect(LocalIpAddress, port);
+            NetworkStream = Client.GetStream();
 
-            Thread receiveThread = new Thread(new ThreadStart(ReceiveMessage));
+            var receiveThread = new Thread(ReceiveMessage);
             receiveThread.Start();
         }
         /// <summary>
@@ -42,8 +41,8 @@ namespace Messenger.Classes.ClientClasses
         /// <param name="message"></param>
         public void SendMessage(string message)
         {
-            byte[] data = Encoding.Unicode.GetBytes(message);
-            Network_stream.Write(data, 0, data.Length);
+            var data = Encoding.Unicode.GetBytes(message);
+            NetworkStream.Write(data, 0, data.Length);
         }
         /// <summary>
         /// Receive message from server
@@ -54,15 +53,15 @@ namespace Messenger.Classes.ClientClasses
             {
                 try
                 {
-                    byte[] data = new byte[RxDBufferSize];
-                    StringBuilder builder = new StringBuilder();
+                    var data = new byte[RxDBufferSize];
+                    var builder = new StringBuilder();
                     do
                     {
-                        int count = Network_stream.Read(data, 0, data.Length);
+                        var count = NetworkStream.Read(data, 0, data.Length);
                         builder.Append(Encoding.Unicode.GetString(data, 0, count));
                     }
-                    while (Network_stream.DataAvailable);
-                    NewMassageEvent?.Invoke(Client, builder.ToString());
+                    while (NetworkStream.DataAvailable);
+                    NewMessageEvent?.Invoke(Client, builder.ToString());
                 }
                 catch
                 {
@@ -75,9 +74,9 @@ namespace Messenger.Classes.ClientClasses
         /// </summary>
         static void Disconnect()
         {
-            if (Network_stream != null)
+            if (NetworkStream != null)
             {
-                Network_stream.Close();
+                NetworkStream.Close();
             }
             if (Client != null)
             {
@@ -92,7 +91,7 @@ namespace Messenger.Classes.ClientClasses
         /// />
         public override string ToString()
         {
-            return String.Format("Type: {0}, IP: {1}, port: {2}", GetType().Name, LocalIPAddress, LocalPort);
+            return $"Type: {GetType().Name}, IP: {LocalIpAddress}, port: {LocalPort}";
         }
 
         /// <inheritdoc 
@@ -100,13 +99,13 @@ namespace Messenger.Classes.ClientClasses
         /// />
         public override bool Equals(object obj)
         {
-            return obj is Client client && LocalIPAddress == client.LocalIPAddress && LocalPort == client.LocalPort;
+            return obj is Client client && LocalIpAddress == client.LocalIpAddress && LocalPort == client.LocalPort;
         }
 
         /// <inheritdoc 
         /// cref="object.GetHashCode"
         /// />
-        public override int GetHashCode() => HashCode.Combine(Client, Network_stream, LocalIPAddress, LocalPort);
+        public override int GetHashCode() => HashCode.Combine(Client, NetworkStream, LocalIpAddress, LocalPort);
 
     }
 }

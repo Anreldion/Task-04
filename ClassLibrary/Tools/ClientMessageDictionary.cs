@@ -1,11 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Net.Sockets;
 using System.Text;
 
-namespace Messenger.ServerClasses.Tools
+namespace Messenger.Tools
 {
     /// <summary>
     /// Client message dictionary
@@ -24,7 +23,7 @@ namespace Messenger.ServerClasses.Tools
                 value.Add(message);
                 return;
             }
-            Add(tcpClient, new List<string> { message });
+            Add(tcpClient, [message]);
         }
 
         /// <summary>
@@ -34,7 +33,7 @@ namespace Messenger.ServerClasses.Tools
         /// <returns>List of messages</returns>
         public List<string> GetMessages(TcpClient tcpClient)
         {
-            List<string> list = new List<string>();
+            List<string> list = [];
             if(TryGetValue(tcpClient, out var value))
             {
                 foreach (var item in value)
@@ -53,14 +52,12 @@ namespace Messenger.ServerClasses.Tools
         {
             try
             {
-                using (StreamWriter sw = new StreamWriter(name, false, Encoding.Default))
+                using var sw = new StreamWriter(name, false, Encoding.Default);
+                foreach (var list in Values)
                 {
-                    foreach (List<string> list in this.Values)
+                    foreach (var item in list)
                     {
-                        foreach (string item in list)
-                        {
-                            sw.WriteLine(item);
-                        }
+                        sw.WriteLine(item);
                     }
                 }
             }

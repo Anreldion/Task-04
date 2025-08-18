@@ -1,7 +1,7 @@
 ﻿using System.Net;
 using System.Net.Sockets;
 
-namespace Messenger.Classes
+namespace Messenger
 {
     /// <summary>
     /// Abstract class describing server and client fields
@@ -11,7 +11,7 @@ namespace Messenger.Classes
         /// <summary>
         /// Provides a Local Internet Protocol (IP) address.
         /// </summary>
-        protected IPAddress LocalIPAddress { get; set; }
+        protected IPAddress LocalIpAddress { get; set; }
 
         /// <summary>
         /// Provides a Local Port address.

@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace Messenger.Classes.ClientClasses.Tools
+namespace Messenger.Tools
 {
     /// <summary>
     /// Transliteration of a message written in Russian letters into English
@@ -10,7 +10,7 @@ namespace Messenger.Classes.ClientClasses.Tools
         /// <summary>
         /// Dictionary containing comparison of Russian characters to English
         /// </summary>
-        private static readonly Dictionary<string, string> conformity = new Dictionary<string, string>()
+        private static readonly Dictionary<string, string> Conformity = new()
             {
                 {"а","a"},
                 {"б","b"},
@@ -54,19 +54,19 @@ namespace Messenger.Classes.ClientClasses.Tools
         /// <returns>String after transliteration</returns>
         public static string Run(string message)
         {
-            string result = "";
+            var result = "";
             foreach (var ch in message)
             {
-                bool isUpper = char.IsUpper(ch);
-                if (conformity.TryGetValue(char.ToLower(ch).ToString(), out string eng_ch))
+                var isUpper = char.IsUpper(ch);
+                if (Conformity.TryGetValue(char.ToLower(ch).ToString(), out var engCh))
                 {
                     if (isUpper)
                     {
-                        result += eng_ch.ToUpper();
+                        result += engCh.ToUpper();
                     }
                     else
                     {
-                        result += eng_ch;
+                        result += engCh;
                     }
                 }
                 else
