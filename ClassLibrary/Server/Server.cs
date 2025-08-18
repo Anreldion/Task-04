@@ -1,64 +1,64 @@
-﻿using Messenger.ServerClasses.Tools;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
+using Messenger.DTO;
+using Messenger.Tools;
 
-
-namespace Messenger.Classes.ServerClasses
+namespace Messenger.Server
 {
     /// <summary>
     /// Server side class
     /// </summary>
-    public class Server : NetworkFields, INewMassage
+    public class Server : NetworkFields, INewMessage
     {
         /// <summary>
         /// Private field for ClientId property.
         /// </summary>
-        private int clientId = 0;
+        private int _clientId;
         /// <summary>
         /// An identifier for new connections.
         /// </summary>
-        private int ClientId => ++clientId;
+        private int ClientId => ++_clientId;
 
         /// <summary>
         /// List for storing information about all connected clients.
         /// </summary>
-        List<ClientHandler> clientHandlerList = new List<ClientHandler>(); // все подключения
+        private readonly List<ClientHandler> _clientHandlerList = []; // все подключения
 
         /// <summary>
         /// Message lists from each client.
         /// </summary>
-        public ClientMessageDictionary messageDictionary = new ClientMessageDictionary();
+        public readonly ClientMessageDictionary MessageDictionary = new ClientMessageDictionary();
 
-        ///<inheritdoc cref="INewMassage.MessageRecived"/>
-        public event Action<TcpClient, string> NewMassageEvent;
+        
+        public event Action<TcpClient, string> NewMessageEvent;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="Server"/ class> 
+        /// Initializes a new instance of the <see cref="Server"/> 
         /// </summary>
         /// <param name="local_ip">Local Internet Protocol (IP) address.</param>
         /// <param name="port">Local Port address.</param>
         public Server(IPAddress local_ip, int port)
         {
-            LocalIPAddress = local_ip;
+            LocalIpAddress = local_ip;
             LocalPort = port;
-            Listener = new TcpListener(LocalIPAddress, LocalPort);
+            Listener = new TcpListener(LocalIpAddress, LocalPort);
             Listener.Start();
-            Thread listenThread = new Thread(new ThreadStart(delegate
+            var listenThread = new Thread(new ThreadStart(delegate
             {
                 try
                 {
                     while (true)
                     {
-                        TcpClient tcpClient = Listener.AcceptTcpClient();
-                        ClientHandler clientHandler = new ClientHandler(ClientId, tcpClient, this);
+                        var tcpClient = Listener.AcceptTcpClient();
+                        var clientHandler = new ClientHandler(ClientId, tcpClient, this);
 
-                        clientHandlerList.Add(clientHandler);
-                        Thread clientThread = new Thread(new ThreadStart(clientHandler.Process));
+                        _clientHandlerList.Add(clientHandler);
+                        var clientThread = new Thread(new ThreadStart(clientHandler.Process));
                         clientThread.Start();
                     }
                 }
@@ -80,9 +80,9 @@ namespace Messenger.Classes.ServerClasses
         /// <param name="id"></param>
         protected internal void RemoveConnection(string id)
         {
-            ClientHandler client = clientHandlerList.FirstOrDefault(c => c.Id == id);
+            var client = _clientHandlerList.FirstOrDefault(c => c.Id == id);
             if (client != null)
-                clientHandlerList.Remove(client);
+                _clientHandlerList.Remove(client);
         }
 
         /// <summary>
@@ -91,10 +91,10 @@ namespace Messenger.Classes.ServerClasses
         /// <param name="message">broadcast message</param>
         public void BroadcastMessage(string message)
         {
-            byte[] data = Encoding.Unicode.GetBytes(message);
-            for (int i = 0; i < clientHandlerList.Count; i++)
+            var data = Encoding.Unicode.GetBytes(message);
+            for (var i = 0; i < _clientHandlerList.Count; i++)
             {
-                clientHandlerList[i].Network_stream.Write(data, 0, data.Length);
+                _clientHandlerList[i].NetworkStream.Write(data, 0, data.Length);
             }
         }
 
@@ -105,8 +105,8 @@ namespace Messenger.Classes.ServerClasses
         /// <param name="message">Client message</param>
         public void SaveMessage(TcpClient tcpClient, string message)
         {
-            messageDictionary.AddMessage(tcpClient, message);
-            NewMassageEvent?.Invoke(Client, message);
+            MessageDictionary.AddMessage(tcpClient, message);
+            NewMessageEvent?.Invoke(Client, message);
         }
 
         /// <summary>
@@ -116,33 +116,27 @@ namespace Messenger.Classes.ServerClasses
         {
             Listener.Stop();
 
-            for (int i = 0; i < clientHandlerList.Count; i++)
+            for (var i = 0; i < _clientHandlerList.Count; i++)
             {
-                clientHandlerList[i].Close();
+                _clientHandlerList[i].Close();
             }
             Environment.Exit(0);
         }
 
-        /// <inheritdoc 
-        /// cref="object.ToString"
-        /// />
+        /// <inheritdoc  cref="object.ToString" />
         public override string ToString()
         {
-            return String.Format("Type: {0}, IP: {1}, port: {2}", GetType().Name, LocalIPAddress, LocalPort);
+            return $"Type: {GetType().Name}, IP: {LocalIpAddress}, port: {LocalPort}";
         }
 
-        /// <inheritdoc 
-        /// cref="object.Equals(object)"
-        /// />
+        /// <inheritdoc  cref="object.Equals(object)" />
         public override bool Equals(object obj)
         {
-            return obj is Server server && LocalIPAddress == server.LocalIPAddress && LocalPort == server.LocalPort;
+            return obj is Server server && LocalIpAddress == server.LocalIpAddress && LocalPort == server.LocalPort;
         }
 
-        /// <inheritdoc 
-        /// cref="object.GetHashCode"
-        /// />
-        public override int GetHashCode() => HashCode.Combine(Listener, LocalIPAddress, LocalPort);
+        /// <inheritdoc  cref="object.GetHashCode" />
+        public override int GetHashCode() => HashCode.Combine(Listener, LocalIpAddress, LocalPort);
 
     }
 }

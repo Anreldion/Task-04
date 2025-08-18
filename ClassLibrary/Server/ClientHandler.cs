@@ -1,8 +1,8 @@
-﻿using System;
+﻿using Messenger.DTO;
 using System.Net.Sockets;
 using System.Text;
 
-namespace Messenger.Classes.ServerClasses
+namespace Messenger.Server
 {
     /// <summary>
     /// Handling client messages and closing connection if lost class.
@@ -12,29 +12,29 @@ namespace Messenger.Classes.ServerClasses
         /// <summary>
         /// Client identifier
         /// </summary>
-        protected internal string Id { get; private set; }
+        protected internal string Id { get; }
 
         /// <summary>
         /// Provides the underlying stream of data for network access.
         /// </summary>
-        protected internal NetworkStream Network_stream { get; private set; }
+        protected internal NetworkStream NetworkStream { get; private set; }
 
         /// <summary>
         /// Server object 
         /// </summary>
-        Server server;
+        private readonly Server _server;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ClientHandler"/ class> 
+        /// Initializes a new instance of the <see cref="ClientHandler"/>
         /// </summary>
-        /// <param name="clientId">Unique identificator</param>
+        /// <param name="clientId">Unique id</param>
         /// <param name="tcpClient">TcpClient link</param>
         /// <param name="serverObject">Server link</param>
         public ClientHandler(int clientId, TcpClient tcpClient, Server serverObject)
         {
             Id = clientId.ToString();
-            NetworkFields.Client = tcpClient;
-            server = serverObject;
+            Client = tcpClient;
+            _server = serverObject;
         }
 
         /// <summary>
@@ -44,13 +44,13 @@ namespace Messenger.Classes.ServerClasses
         {
             try
             {
-                Network_stream = Client.GetStream();
+                NetworkStream = Client.GetStream();
                 while (true)
                 {
                     try
                     {
-                        string message = GetMessage();
-                        server.SaveMessage(Client, message);
+                        var message = GetMessage();
+                        _server.SaveMessage(Client, message);
                     }
                     catch
                     {
@@ -58,13 +58,9 @@ namespace Messenger.Classes.ServerClasses
                     }
                 }
             }
-            catch (Exception e)
-            {
-                throw e;
-            }
             finally
             {
-                server.RemoveConnection(this.Id);
+                _server.RemoveConnection(Id);
                 Close();
             }
         }
@@ -75,14 +71,14 @@ namespace Messenger.Classes.ServerClasses
         /// <returns>Message</returns>
         private string GetMessage()
         {
-            byte[] data = new byte[RxDBufferSize]; // буфер для получаемых данных
-            StringBuilder builder = new StringBuilder();
+            var data = new byte[RxDBufferSize]; // буфер для получаемых данных
+            var builder = new StringBuilder();
             do
             {
-                int count = Network_stream.Read(data, 0, data.Length);
+                var count = NetworkStream.Read(data, 0, data.Length);
                 builder.Append(Encoding.Unicode.GetString(data, 0, count));
             }
-            while (Network_stream.DataAvailable);
+            while (NetworkStream.DataAvailable);
             return builder.ToString();
         }
 
@@ -91,9 +87,9 @@ namespace Messenger.Classes.ServerClasses
         /// </summary>
         protected internal void Close()
         {
-            if (Network_stream != null)
+            if (NetworkStream != null)
             {
-                Network_stream.Close();
+                NetworkStream.Close();
             }
             if (Client != null)
             {
