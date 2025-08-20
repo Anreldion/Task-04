@@ -8,7 +8,7 @@ namespace NUnitTests;
 [TestFixture]
 internal class ClientServiceTests
 {
-    private ServerService _server;
+    private Server _server;
     private const string ServerIp = "127.0.0.2";
     private const int ServerPort = 8080;
     private string _expected;
@@ -16,7 +16,7 @@ internal class ClientServiceTests
     [OneTimeSetUp]
     public void SetUp()
     {
-        _server = new ServerService(IPAddress.Parse(ServerIp), ServerPort);
+        _server = new Server(IPAddress.Parse(ServerIp), ServerPort);
     }
 
     [TestCase("127.0.0.2", 8080, "Test 1")]

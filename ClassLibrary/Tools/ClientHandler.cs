@@ -1,77 +1,41 @@
-﻿using System;
+﻿using Messenger.Services;
+using System;
+using System.IO;
 using System.Net.Sockets;
 using System.Text;
-using Messenger.Services;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Messenger.Tools
 {
-    /// <summary>
-    /// Handling client messages and closing connection if lost class.
-    /// </summary>
     public class ClientHandler
     {
-        /// <summary>
-        /// Array size for received data.
-        /// </summary>
-        protected const int RxDBufferSize = 64;
+        public Guid Id { get; } = Guid.NewGuid();
 
-        /// <summary>
-        /// ClientService. Provides client connections for TCP network services.
-        /// </summary>
-        protected static TcpClient Client { get; set; }
+        private static TcpClient Client { get; set; }
+        internal NetworkStream NetworkStream { get; private set; } = null!;
+        private readonly Server _server;
 
-        /// <summary>
-        /// Server. Listens for connections from TCP network clients.
-        /// </summary>
-        protected static TcpListener Listener { get; set; }
-        /// <summary>
-        /// ClientService identifier
-        /// </summary>
-        protected internal Guid Id { get; }
-
-        /// <summary>
-        /// Provides the underlying stream of data for network access.
-        /// </summary>
-        protected internal NetworkStream NetworkStream { get; private set; }
-
-        /// <summary>
-        /// Server object 
-        /// </summary>
-        private readonly ServerService _server;
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="ClientHandler"/>
-        /// </summary>
-        /// <param name="tcpClient">TcpClient link</param>
-        /// <param name="serverObject">Server link</param>
-        public ClientHandler(TcpClient tcpClient, ServerService serverObject)
+        public ClientHandler(TcpClient tcpClient, Server server)
         {
-            Id = Guid.NewGuid();
             Client = tcpClient;
-            _server = serverObject;
+            _server = server;
         }
 
-        /// <summary>
-        /// The process of receiving new messages and closing the connection if lost.
-        /// </summary>
-        public void Process()
+        public async Task ProcessAsync(CancellationToken ct)
         {
             try
             {
                 NetworkStream = Client.GetStream();
-                while (true)
+                while (!ct.IsCancellationRequested)
                 {
-                    try
-                    {
-                        var message = GetMessage();
-                        _server.SaveMessage(Id, message);
-                    }
-                    catch
-                    {
-                        break;
-                    }
+                    var msg = await ReadMessageAsync(NetworkStream, ct);
+                    if (msg is null) break; 
+                    _server.SaveMessage(Client, msg);
                 }
             }
+            catch (OperationCanceledException) { }
+            catch (IOException) { }
             finally
             {
                 _server.RemoveConnection(Id);
@@ -79,28 +43,25 @@ namespace Messenger.Tools
             }
         }
 
-        /// <summary>
-        /// Reading an incoming message and converting to a string
-        /// </summary>
-        /// <returns>Message</returns>
-        private string GetMessage()
+        private static async Task<string?> ReadMessageAsync(NetworkStream stream, CancellationToken ct)
         {
-            var data = new byte[RxDBufferSize]; 
-            var builder = new StringBuilder();
-            do
+            var buf = new byte[NetConfig.RxDBufferSize];
+            var sb = new StringBuilder();
+
+            int count = await stream.ReadAsync(buf, 0, buf.Length, ct);
+            if (count == 0) return null;
+            sb.Append(Encoding.Unicode.GetString(buf, 0, count));
+
+            while (stream.DataAvailable)
             {
-                var count = NetworkStream.Read(data, 0, data.Length);
+                count = await stream.ReadAsync(buf, 0, buf.Length, ct);
                 if (count == 0) break;
-                builder.Append(Encoding.Unicode.GetString(data, 0, count));
+                sb.Append(Encoding.Unicode.GetString(buf, 0, count));
             }
-            while (NetworkStream.DataAvailable);
-            return builder.ToString();
+            return sb.ToString();
         }
 
-        /// <summary>
-        /// Close connection
-        /// </summary>
-        protected internal void Close()
+        internal void Close()
         {
             try { NetworkStream?.Close(); } catch { }
             try { Client?.Close(); } catch { }

@@ -1,70 +1,73 @@
 ﻿using Messenger.Services.Interfaces;
 using System;
+using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Messenger.Services
 {
 
-    public class ClientService : INewMessage
+    public class ClientService : INewMessage, IDisposable
     {
-        
-        private const int RxDBufferSize = 64;
-        private static TcpClient Client { get; set; }
-        protected static TcpListener Listener { get; set; }
-        private NetworkStream NetworkStream { get; set; }
+        private TcpClient _client = default!;
+        private NetworkStream _stream = default!;
+        private readonly CancellationTokenSource _cts = new();
         public event Action<TcpClient, string> NewMessageEvent;
 
-        public ClientService(IPAddress ipAddress, int port)
+        public async Task ConnectAsync(IPAddress ip, int port, CancellationToken ct = default)
         {
-            Client = new TcpClient();
-            Client.Connect(ipAddress, port);
-            NetworkStream = Client.GetStream();
-
-            var receiveThread = new Thread(ReceiveMessage);
-            receiveThread.Start();
+            _client = new TcpClient();
+            await _client.ConnectAsync(ip, port, ct);
+            _stream = _client.GetStream();
+            _ = ReceiveLoopAsync(_cts.Token);
         }
 
-        public void SendMessage(string message)
+        public async Task SendMessageAsync(string message, CancellationToken ct = default)
         {
             var data = Encoding.Unicode.GetBytes(message);
-            NetworkStream.Write(data, 0, data.Length);
+            await _stream.WriteAsync(data, 0, data.Length, ct);
         }
 
-        public void ReceiveMessage()
+        private async Task ReceiveLoopAsync(CancellationToken ct)
         {
-            while (true)
+            try
             {
-                try
-                {
-                    var data = new byte[RxDBufferSize];
-                    var builder = new StringBuilder();
-                    do
-                    {
-                        var count = NetworkStream.Read(data, 0, data.Length);
-                        if (count == 0) { Disconnect(); return; }
-                        builder.Append(Encoding.Unicode.GetString(data, 0, count));
-                    }
-                    while (NetworkStream.DataAvailable);
+                var buf = new byte[NetConfig.RxDBufferSize];
+                var sb = new StringBuilder();
 
-                    NewMessageEvent?.Invoke(Client, builder.ToString());
-                }
-                catch
+                while (!ct.IsCancellationRequested)
                 {
-                    Disconnect();
-                    return;
+                    var count = await _stream.ReadAsync(buf, 0, buf.Length, ct);
+                    if (count == 0) break;
+
+                    sb.Clear();
+                    sb.Append(Encoding.Unicode.GetString(buf, 0, count));
+                    while (_stream.DataAvailable)
+                    {
+                        count = await _stream.ReadAsync(buf, 0, buf.Length, ct);
+                        if (count == 0) break;
+                        sb.Append(Encoding.Unicode.GetString(buf, 0, count));
+                    }
+
+                    NewMessageEvent?.Invoke(_client, sb.ToString());
                 }
             }
-        }
-        
-        private void Disconnect()
-        {
-            try { NetworkStream?.Close(); } catch { }
-            try { Client?.Close(); } catch { }
+            catch (OperationCanceledException) { }
+            catch (IOException) { }
+            finally
+            {
+                Dispose();
+            }
         }
 
-        public override string ToString() => $"Type: {GetType().Name}";
+        public void Dispose()
+        {
+            _cts.Cancel();
+            try { _stream?.Close(); } catch { }
+            try { _client?.Close(); } catch { }
+        }
     }
 }
