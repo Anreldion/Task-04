@@ -1,18 +1,33 @@
-﻿using Messenger.DTO;
+﻿using System;
 using System.Net.Sockets;
 using System.Text;
+using Messenger.Services;
 
-namespace Messenger.Server
+namespace Messenger.Tools
 {
     /// <summary>
     /// Handling client messages and closing connection if lost class.
     /// </summary>
-    public class ClientHandler : NetworkFields
+    public class ClientHandler
     {
         /// <summary>
-        /// Client identifier
+        /// Array size for received data.
         /// </summary>
-        protected internal string Id { get; }
+        protected const int RxDBufferSize = 64;
+
+        /// <summary>
+        /// ClientService. Provides client connections for TCP network services.
+        /// </summary>
+        protected static TcpClient Client { get; set; }
+
+        /// <summary>
+        /// Server. Listens for connections from TCP network clients.
+        /// </summary>
+        protected static TcpListener Listener { get; set; }
+        /// <summary>
+        /// ClientService identifier
+        /// </summary>
+        protected internal Guid Id { get; }
 
         /// <summary>
         /// Provides the underlying stream of data for network access.
@@ -22,17 +37,16 @@ namespace Messenger.Server
         /// <summary>
         /// Server object 
         /// </summary>
-        private readonly Server _server;
+        private readonly ServerService _server;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ClientHandler"/>
         /// </summary>
-        /// <param name="clientId">Unique id</param>
         /// <param name="tcpClient">TcpClient link</param>
         /// <param name="serverObject">Server link</param>
-        public ClientHandler(int clientId, TcpClient tcpClient, Server serverObject)
+        public ClientHandler(TcpClient tcpClient, ServerService serverObject)
         {
-            Id = clientId.ToString();
+            Id = Guid.NewGuid();
             Client = tcpClient;
             _server = serverObject;
         }
@@ -50,7 +64,7 @@ namespace Messenger.Server
                     try
                     {
                         var message = GetMessage();
-                        _server.SaveMessage(Client, message);
+                        _server.SaveMessage(Id, message);
                     }
                     catch
                     {
@@ -71,11 +85,12 @@ namespace Messenger.Server
         /// <returns>Message</returns>
         private string GetMessage()
         {
-            var data = new byte[RxDBufferSize]; // буфер для получаемых данных
+            var data = new byte[RxDBufferSize]; 
             var builder = new StringBuilder();
             do
             {
                 var count = NetworkStream.Read(data, 0, data.Length);
+                if (count == 0) break;
                 builder.Append(Encoding.Unicode.GetString(data, 0, count));
             }
             while (NetworkStream.DataAvailable);
@@ -87,14 +102,8 @@ namespace Messenger.Server
         /// </summary>
         protected internal void Close()
         {
-            if (NetworkStream != null)
-            {
-                NetworkStream.Close();
-            }
-            if (Client != null)
-            {
-                Client.Close();
-            }
+            try { NetworkStream?.Close(); } catch { }
+            try { Client?.Close(); } catch { }
         }
     }
 
