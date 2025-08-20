@@ -9,14 +9,14 @@ namespace NUnitTests;
 [TestFixture]
 internal class ServerTests
 {
-    private ServerService _server;
+    private Server _server;
     private const string ServerIp = "127.0.0.1";
     private const int ServerPort = 8080;
 
     [OneTimeSetUp]
     public void SetUp()
     {
-        _server = new ServerService(IPAddress.Parse(ServerIp), ServerPort);
+        _server = new Server(IPAddress.Parse(ServerIp), ServerPort);
     }
 
     [TestCase("127.0.0.1", 8080, "Тест", "Test")]
