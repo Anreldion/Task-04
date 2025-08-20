@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Net.Sockets;
 
-namespace Messenger
+namespace Messenger.Services.Interfaces
 {
     /// <summary>
     /// Interface allowing subscription to a new message event.

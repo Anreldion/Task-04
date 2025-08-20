@@ -1,15 +1,14 @@
 ﻿using System.Net;
 using System.Net.Sockets;
-using Messenger.Client;
-using Messenger.Server;
+using Messenger.Services;
 using NUnit.Framework;
 
 namespace NUnitTests;
 
 [TestFixture]
-internal class ClientTests
+internal class ClientServiceTests
 {
-    private Server _server;
+    private ServerService _server;
     private const string ServerIp = "127.0.0.2";
     private const int ServerPort = 8080;
     private string _expected;
@@ -17,7 +16,7 @@ internal class ClientTests
     [OneTimeSetUp]
     public void SetUp()
     {
-        _server = new Server(IPAddress.Parse(ServerIp), ServerPort);
+        _server = new ServerService(IPAddress.Parse(ServerIp), ServerPort);
     }
 
     [TestCase("127.0.0.2", 8080, "Test 1")]
@@ -25,7 +24,7 @@ internal class ClientTests
     [Description("Testing SendMessage method")]
     public void SendMessageTest(string ip, int port, string expected_message)
     {
-        var client = new Client(IPAddress.Parse(ip), port);
+        var client = new ClientService(IPAddress.Parse(ip), port);
 
         _server.NewMessageEvent += (client, get_new_message) =>
         {

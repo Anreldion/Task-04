@@ -1,64 +1,23 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Net.Sockets;
-using System.Text;
 
 namespace Messenger.Tools
 {
-    /// <summary>
-    /// Client message dictionary
-    /// </summary>
-    public class ClientMessageDictionary : Dictionary<TcpClient, List<string>>
+    public class ClientMessageDictionary
     {
-        /// <summary>
-        /// Add message to dictionary
-        /// </summary>
-        /// <param name="tcpClient">Provides client connections for TCP network services.</param>
-        /// <param name="message">Message line</param>
-        public void AddMessage(TcpClient tcpClient, string message)
+        private readonly ConcurrentDictionary<Guid, ConcurrentBag<string>> _messages = new();
+        
+        public void AddMessage(Guid guid, string message)
         {
-            if (TryGetValue(tcpClient, out var value))
-            {
-                value.Add(message);
-                return;
-            }
-            Add(tcpClient, [message]);
+            var bag = _messages.GetOrAdd(guid, _ => []);
+            bag.Add(message);
         }
 
-        /// <summary>
-        /// Get a list of messages.
-        /// </summary>
-        /// <param name="tcpClient">Provides client connections for TCP network services.</param>
-        /// <returns>List of messages</returns>
-        public List<string> GetMessages(TcpClient tcpClient)
+        public List<string> GetMessages(Guid guid)
         {
-            List<string> list = [];
-            if (!TryGetValue(tcpClient, out var value)) return list;
-
-            list.AddRange(value);
-            return list;
-        }
-
-        /// <summary>
-        /// Save messages to file.
-        /// </summary>
-        /// <param name="name">File name</param>
-        public void ToFile(string name)
-        {
-            try
-            {
-                using var sw = new StreamWriter(name, false, Encoding.Default);
-                foreach (var item in Values.SelectMany(list => list))
-                {
-                    sw.WriteLine(item);
-                }
-            }
-            catch (Exception e)
-            {
-                throw new Exception(e.Message);
-            }
+            return _messages.TryGetValue(key: guid, out var bag) ? bag.ToList() : [];
         }
     }
 }
