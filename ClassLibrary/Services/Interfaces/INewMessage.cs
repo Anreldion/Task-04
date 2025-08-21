@@ -11,6 +11,6 @@ namespace Messenger.Services.Interfaces
         /// <summary>
         /// Event allowing subscription to a new message.
         /// </summary>
-        event Action<TcpClient, string> NewMessageEvent;
+        event EventHandler<MessageReceivedEventArgs> MessageReceived;
     }
 }

@@ -1,66 +1,66 @@
 ﻿using Messenger.Services.Interfaces;
+using Messenger.Tools;
 using System;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace Messenger.Services
 {
-
     public class ClientService : INewMessage, IDisposable
     {
         private TcpClient _client = default!;
         private NetworkStream _stream = default!;
         private readonly CancellationTokenSource _cts = new();
-        public event Action<TcpClient, string> NewMessageEvent;
+
+        public event EventHandler<MessageReceivedEventArgs> MessageReceived;
 
         public async Task ConnectAsync(IPAddress ip, int port, CancellationToken ct = default)
         {
             _client = new TcpClient();
             await _client.ConnectAsync(ip, port, ct);
+            _client.NoDelay = true;
+            _client.ReceiveBufferSize = 64 * 1024;
+            _client.SendBufferSize = 64 * 1024;
+
             _stream = _client.GetStream();
             _ = ReceiveLoopAsync(_cts.Token);
         }
 
         public async Task SendMessageAsync(string message, CancellationToken ct = default)
         {
-            var data = Encoding.Unicode.GetBytes(message);
-            await _stream.WriteAsync(data, 0, data.Length, ct);
+            using var wcts = CancellationTokenSource.CreateLinkedTokenSource(ct, _cts.Token);
+            wcts.CancelAfter(TimeSpan.FromSeconds(10));
+            await Framing.WriteWithLengthAsync(_stream, message, wcts.Token);
         }
 
         private async Task ReceiveLoopAsync(CancellationToken ct)
         {
             try
             {
-                var buf = new byte[NetConfig.RxDBufferSize];
-                var sb = new StringBuilder();
-
+                var idleTimeout = TimeSpan.FromMinutes(5);
                 while (!ct.IsCancellationRequested)
                 {
-                    var count = await _stream.ReadAsync(buf, 0, buf.Length, ct);
-                    if (count == 0) break;
+                    using var rcts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+                    rcts.CancelAfter(idleTimeout);
+                    string? msg = await Framing.ReadWithLengthAsync(_stream, rcts.Token);
+                    if (msg is null) break;
 
-                    sb.Clear();
-                    sb.Append(Encoding.Unicode.GetString(buf, 0, count));
-                    while (_stream.DataAvailable)
-                    {
-                        count = await _stream.ReadAsync(buf, 0, buf.Length, ct);
-                        if (count == 0) break;
-                        sb.Append(Encoding.Unicode.GetString(buf, 0, count));
-                    }
+                    var translit = Transliterator.ToLatin(msg);
+                    var remote = _client.Client.RemoteEndPoint as IPEndPoint;
 
-                    NewMessageEvent?.Invoke(_client, sb.ToString());
+                    MessageReceived?.Invoke(this, new MessageReceivedEventArgs(
+                        message: msg,
+                        clientId: null,
+                        remote: remote,
+                        transliterated: translit));
                 }
             }
             catch (OperationCanceledException) { }
             catch (IOException) { }
-            finally
-            {
-                Dispose();
-            }
+            finally { Dispose(); }
         }
 
         public void Dispose()
