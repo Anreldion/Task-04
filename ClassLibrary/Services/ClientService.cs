@@ -1,4 +1,5 @@
 ﻿using Messenger.Services.Interfaces;
+using Messenger.Tools;
 using System;
 using System.IO;
 using System.Net;
@@ -21,46 +22,38 @@ namespace Messenger.Services
         {
             _client = new TcpClient();
             await _client.ConnectAsync(ip, port, ct);
+            _client.NoDelay = true;
+            _client.ReceiveBufferSize = 64 * 1024;
+            _client.SendBufferSize = 64 * 1024;
+
             _stream = _client.GetStream();
             _ = ReceiveLoopAsync(_cts.Token);
         }
 
         public async Task SendMessageAsync(string message, CancellationToken ct = default)
         {
-            var data = Encoding.Unicode.GetBytes(message);
-            await _stream.WriteAsync(data, 0, data.Length, ct);
+            using var wcts = CancellationTokenSource.CreateLinkedTokenSource(ct, _cts.Token);
+            wcts.CancelAfter(TimeSpan.FromSeconds(10)); 
+            await Framing.WriteWithLengthAsync(_stream, message, wcts.Token);
         }
 
         private async Task ReceiveLoopAsync(CancellationToken ct)
         {
             try
             {
-                var buf = new byte[NetConfig.RxDBufferSize];
-                var sb = new StringBuilder();
-
+                var idleTimeout = TimeSpan.FromMinutes(5);
                 while (!ct.IsCancellationRequested)
                 {
-                    var count = await _stream.ReadAsync(buf, 0, buf.Length, ct);
-                    if (count == 0) break;
-
-                    sb.Clear();
-                    sb.Append(Encoding.Unicode.GetString(buf, 0, count));
-                    while (_stream.DataAvailable)
-                    {
-                        count = await _stream.ReadAsync(buf, 0, buf.Length, ct);
-                        if (count == 0) break;
-                        sb.Append(Encoding.Unicode.GetString(buf, 0, count));
-                    }
-
-                    NewMessageEvent?.Invoke(_client, sb.ToString());
+                    using var rcts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+                    rcts.CancelAfter(idleTimeout); 
+                    string? msg = await Framing.ReadWithLengthAsync(_stream, rcts.Token);
+                    if (msg is null) break;
+                    NewMessageEvent?.Invoke(_client, msg);
                 }
             }
             catch (OperationCanceledException) { }
             catch (IOException) { }
-            finally
-            {
-                Dispose();
-            }
+            finally { Dispose(); }
         }
 
         public void Dispose()

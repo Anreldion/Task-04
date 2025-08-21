@@ -2,7 +2,6 @@
 using System;
 using System.IO;
 using System.Net.Sockets;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -12,26 +11,38 @@ namespace Messenger.Tools
     {
         public Guid Id { get; } = Guid.NewGuid();
 
-        private static TcpClient Client { get; set; }
+        private readonly TcpClient _client;
         internal NetworkStream NetworkStream { get; private set; } = null!;
         private readonly Server _server;
 
         public ClientHandler(TcpClient tcpClient, Server server)
         {
-            Client = tcpClient;
+            _client = tcpClient;
             _server = server;
         }
 
-        public async Task ProcessAsync(CancellationToken ct)
+        public async Task ProcessAsync(CancellationToken serverCt)
         {
+            using var linkCts = CancellationTokenSource.CreateLinkedTokenSource(serverCt);
+            var ct = linkCts.Token;
+
             try
             {
-                NetworkStream = Client.GetStream();
+                NetworkStream = _client.GetStream();
+                var idleTimeout = TimeSpan.FromMinutes(2);
+
                 while (!ct.IsCancellationRequested)
                 {
-                    var msg = await ReadMessageAsync(NetworkStream, ct);
-                    if (msg is null) break; 
-                    _server.SaveMessage(Client, msg);
+                    using var readCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+                    readCts.CancelAfter(idleTimeout);
+
+                    var msg = await Framing.ReadWithLengthAsync(NetworkStream, readCts.Token);
+                    if (msg is null) break;
+
+                    _server.SaveMessage(Id, _client, msg);
+
+                    using var writeCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+                    writeCts.CancelAfter(TimeSpan.FromSeconds(10));
                 }
             }
             catch (OperationCanceledException) { }
@@ -43,28 +54,10 @@ namespace Messenger.Tools
             }
         }
 
-        private static async Task<string?> ReadMessageAsync(NetworkStream stream, CancellationToken ct)
-        {
-            var buf = new byte[NetConfig.RxDBufferSize];
-            var sb = new StringBuilder();
-
-            int count = await stream.ReadAsync(buf, 0, buf.Length, ct);
-            if (count == 0) return null;
-            sb.Append(Encoding.Unicode.GetString(buf, 0, count));
-
-            while (stream.DataAvailable)
-            {
-                count = await stream.ReadAsync(buf, 0, buf.Length, ct);
-                if (count == 0) break;
-                sb.Append(Encoding.Unicode.GetString(buf, 0, count));
-            }
-            return sb.ToString();
-        }
-
         internal void Close()
         {
             try { NetworkStream?.Close(); } catch { }
-            try { Client?.Close(); } catch { }
+            try { _client?.Close(); } catch { }
         }
     }
 
