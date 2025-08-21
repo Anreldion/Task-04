@@ -20,6 +20,7 @@ namespace Messenger.Services
         private readonly List<ClientHandler> _clients = [];
         private readonly CancellationTokenSource _cts = new();
         private readonly SemaphoreSlim _concurrency;
+        public event EventHandler<MessageReceivedEventArgs> MessageReceived;
         public int Backlog { get; }
         private readonly ClientMessageDictionary _messageDictionary = new();
 
@@ -94,7 +95,11 @@ namespace Messenger.Services
         public void SaveMessage(Guid clientId, TcpClient client, string message)
         {
             _messageDictionary.AddMessage(clientId, message);
-            NewMessageEvent?.Invoke(client, message);
+            var remote = client.Client.RemoteEndPoint as IPEndPoint;
+            MessageReceived?.Invoke(this, new MessageReceivedEventArgs(
+                message: message,
+                clientId: clientId,
+                remote: remote));
         }
 
         public void Dispose()

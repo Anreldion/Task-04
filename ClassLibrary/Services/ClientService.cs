@@ -4,19 +4,18 @@ using System;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace Messenger.Services
 {
-
     public class ClientService : INewMessage, IDisposable
     {
         private TcpClient _client = default!;
         private NetworkStream _stream = default!;
         private readonly CancellationTokenSource _cts = new();
-        public event Action<TcpClient, string> NewMessageEvent;
+
+        public event EventHandler<MessageReceivedEventArgs> MessageReceived;
 
         public async Task ConnectAsync(IPAddress ip, int port, CancellationToken ct = default)
         {
@@ -33,7 +32,7 @@ namespace Messenger.Services
         public async Task SendMessageAsync(string message, CancellationToken ct = default)
         {
             using var wcts = CancellationTokenSource.CreateLinkedTokenSource(ct, _cts.Token);
-            wcts.CancelAfter(TimeSpan.FromSeconds(10)); 
+            wcts.CancelAfter(TimeSpan.FromSeconds(10));
             await Framing.WriteWithLengthAsync(_stream, message, wcts.Token);
         }
 
@@ -45,10 +44,18 @@ namespace Messenger.Services
                 while (!ct.IsCancellationRequested)
                 {
                     using var rcts = CancellationTokenSource.CreateLinkedTokenSource(ct);
-                    rcts.CancelAfter(idleTimeout); 
+                    rcts.CancelAfter(idleTimeout);
                     string? msg = await Framing.ReadWithLengthAsync(_stream, rcts.Token);
                     if (msg is null) break;
-                    NewMessageEvent?.Invoke(_client, msg);
+
+                    var translit = Transliterator.ToLatin(msg);
+                    var remote = _client.Client.RemoteEndPoint as IPEndPoint;
+
+                    MessageReceived?.Invoke(this, new MessageReceivedEventArgs(
+                        message: msg,
+                        clientId: null,
+                        remote: remote,
+                        transliterated: translit));
                 }
             }
             catch (OperationCanceledException) { }

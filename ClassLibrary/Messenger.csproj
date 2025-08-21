@@ -5,13 +5,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="DTO\**" />
     <Compile Remove="Interfaces\**" />
+    <EmbeddedResource Remove="DTO\**" />
     <EmbeddedResource Remove="Interfaces\**" />
+    <None Remove="DTO\**" />
     <None Remove="Interfaces\**" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="DTO\" />
   </ItemGroup>
 
 </Project>
